@@ -1,4 +1,4 @@
-# AISeek Demo - Render-Optimized with Eccentric UI
+# AISeek Demo - Improved for Render with Logo
 # Deploy: git push to Render with requirements.txt + Procfile
 
 import re
@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AISeek")
 
-# Simulated index (50 entries: 10 static, 40 X-like posts)
+# Simulated index
 index = {
     1: {"url": "sci.org/1", "content": "AI transforms science with reasoning models"},
     2: {"url": "dev.net/2", "content": "Python beats Java for quick coding projects"},
@@ -24,7 +24,7 @@ index = {
     7: {"url": "edu.org/7", "content": "Python and AI are the future of learning"},
     8: {"url": "tech.io/8", "content": "Ditch ads, embrace clean search"},
     9: {"url": "x.com/9", "content": "AISeek hype is real—new search king?"},
-    10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending now"}
+    10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending in the news"}
 }
 
 # Simulated X crawler
@@ -33,10 +33,10 @@ def simulate_x_crawler():
     for i in range(40):
         post_id = x_base + i
         content = random.choice([
-            f"AISeek’s crushing it—Google’s {random.choice(['done', 'toast', 'shaking'])}",
-            f"Python + AI = {random.choice(['future', 'win', 'gold'])}",
-            f"Search without {random.choice(['ads', 'SEO', 'crap'])}—AISeek delivers",
-            f"AI breakthroughs: {random.choice(['real-time', 'mind-blowing', 'next-level'])}"
+            f"AISeek’s crushing it—Google’s {random.choice(['done', 'toast', 'shaking'])} in latest news",
+            f"Python + AI = {random.choice(['future', 'win', 'gold'])}—news buzzing now",
+            f"Search without {random.choice(['ads', 'SEO', 'crap'])}—AISeek delivers fresh news",
+            f"AI breakthroughs: {random.choice(['real-time', 'mind-blowing', 'next-level'])} in today’s news"
         ])
         index[post_id] = {
             "url": f"x.com/p{post_id}",
@@ -56,7 +56,23 @@ def build_index():
         for word, count in word_count.items():
             inverted_index[word].append((doc_id, count))
 
-# Scoring: TF-IDF + recency + quality
+# Simple synonym map
+SYNONYMS = {
+    "news": ["info", "updates", "trending"],
+    "ai": ["artificial", "intelligence"],
+    "search": ["find", "lookup"]
+}
+
+def expand_query(query_words):
+    expanded = set(query_words)
+    for word in query_words:
+        for key, synonyms in SYNONYMS.items():
+            if word == key or word in synonyms:
+                expanded.update(synonyms)
+                expanded.add(key)
+    return list(expanded)
+
+# Scoring
 def score_document(query_words, doc_id):
     score = 0
     doc_words = re.findall(r'\w+', index[doc_id]["content"].lower())
@@ -78,32 +94,31 @@ def score_document(query_words, doc_id):
         score += 0.5
     return score
 
-# Search function
+# Search function (returns top 3)
 def aiseek_search(query):
     logger.info(f"Searching: {query}")
     query_words = re.findall(r'\w+', query.lower())
+    expanded_words = expand_query(query_words)
     matching_docs = set()
     
-    for word in query_words:
+    for word in expanded_words:
         if word in inverted_index:
             for doc_id, _ in inverted_index[word]:
                 matching_docs.add(doc_id)
     
     results = []
     for doc_id in matching_docs:
-        score = score_document(query_words, doc_id)
+        score = score_document(expanded_words, doc_id)
         results.append((score, doc_id))
     results.sort(reverse=True)
     
     if not results:
-        return "No results found!", None, None
+        return [("No results found!", None, None)]
     
-    top_doc = results[0][1]
-    return (
-        index[top_doc]["content"],
-        f"Matches {query_words}, scored {results[0][0]:.2f} (recency + quality boosted)",
-        index[top_doc]["url"]
-    )
+    top_results = results[:3]  # Top 3
+    return [(index[doc_id]["content"], 
+             f"Matches {expanded_words}, scored {score:.2f}",
+             index[doc_id]["url"]) for score, doc_id in top_results]
 
 # Flask app
 app = Flask(__name__)
@@ -113,34 +128,44 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <title>AISeek Search!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-        .container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-        .logo { font-size: 48px; font-weight: bold; color: #ff4500; text-shadow: 2px 2px #00b7ff; margin-bottom: 20px; }
-        .logo span { color: #00b7ff; }
-        .search-box { width: 100%; max-width: 600px; display: flex; justify-content: center; }
-        .search-input { width: 80%; padding: 12px; font-size: 16px; border: 1px solid #dfe1e5; border-radius: 24px 0 0 24px; box-shadow: none; outline: none; }
-        .search-button { padding: 12px 20px; font-size: 16px; background-color: #ff4500; color: white; border: none; border-radius: 0 24px 24px 0; cursor: pointer; }
-        .search-button:hover { background-color: #e03e00; }
-        .result { max-width: 600px; margin-top: 20px; text-align: left; }
-        .result h3 { font-size: 20px; margin: 10px 0; }
-        .result p { font-size: 14px; color: #555; margin: 5px 0; }
-        .result a { color: #ff4500; text-decoration: none; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        .logo { margin: 20px 0; }
+        .logo img { max-width: 200px; height: auto; }
+        .search-box { display: flex; justify-content: center; margin: 20px 0; }
+        .search-input { width: 70%; max-width: 500px; padding: 12px; font-size: 16px; border: 1px solid #dfe1e5; border-radius: 24px 0 0 24px; box-shadow: 0 1px 6px rgba(32,33,36,.28); }
+        .search-button { padding: 12px 20px; font-size: 16px; background: #ff4500; color: white; border: none; border-radius: 0 24px 24px 0; cursor: pointer; }
+        .search-button:hover { background: #e03e00; }
+        .results { text-align: left; margin-top: 20px; }
+        .result { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+        .result h3 { font-size: 18px; margin: 0 0 5px; color: #ff4500; }
+        .result p { font-size: 14px; color: #333; margin: 5px 0; }
+        .result a { color: #00b7ff; text-decoration: none; }
         .result a:hover { text-decoration: underline; }
+        @media (max-width: 600px) { 
+            .search-input { width: 60%; } 
+            .logo img { max-width: 150px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="logo">AISeek <span>Search!</span></div>
+        <div class="logo"><img src="{{ url_for('static', filename='aiseek_logo.png') }}" alt="AISeek Search!"></div>
         <form method="POST" class="search-box">
-            <input type="text" name="query" class="search-input" placeholder="Search the AI way..." value="{{ query or '' }}">
+            <input type="text" name="query" class="search-input" placeholder="Search the AI way..." value="{{ query or '' }}" autofocus>
             <button type="submit" class="search-button">Seek</button>
         </form>
-        {% if context.result %}
-            <div class="result">
-                <h3>{{ context.result }}</h3>
-                <p>{{ context.why }}</p>
-                <p><a href="{{ context.source }}" target="_blank">{{ context.source }}</a></p>
+        {% if results %}
+            <div class="results">
+                {% for result, why, source in results %}
+                    <div class="result">
+                        <h3>{{ result }}</h3>
+                        <p>{{ why }}</p>
+                        <p><a href="{{ source }}" target="_blank">{{ source }}</a></p>
+                    </div>
+                {% endfor %}
             </div>
         {% endif %}
     </div>
@@ -150,24 +175,28 @@ HTML_TEMPLATE = """
 
 @app.route("/", methods=["GET", "POST"])
 def home():
-    context = {"result": None, "why": None, "source": None}
+    results = []
     query = None
     if request.method == "POST":
         query = request.form["query"]
-        context["result"], context["why"], context["source"] = aiseek_search(query)
-    return render_template_string(HTML_TEMPLATE, context=context, query=query)
+        results = aiseek_search(query)
+    return render_template_string(HTML_TEMPLATE, results=results, query=query)
 
-# Health check
 @app.route("/health")
 def health():
     logger.info("Health check hit")
     return "OK", 200
+
+# Serve static files for logo
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return app.send_static_file(filename)
 
 # Build index
 simulate_x_crawler()
 build_index()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))  # Render sets PORT
+    port = int(os.environ.get("PORT", 5000))
     logger.info(f"Starting AISeek on port {port}")
     app.run(debug=False, host="0.0.0.0", port=port)
