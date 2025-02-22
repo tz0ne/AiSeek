@@ -1,4 +1,4 @@
-# AISeek Demo - Enhanced for Render with X API Prep
+# AISeek Demo - Enhanced for Render with X API Prep (tweepy Fallback)
 # Deploy: git push to Render with requirements.txt + Procfile
 
 import re
@@ -10,11 +10,16 @@ import os
 import logging
 import time
 from functools import lru_cache
-import tweepy
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AISeek")
+
+try:
+    import tweepy
+except ImportError:
+    logger.warning("tweepy not found—using mock X crawler only")
+    tweepy = None
 
 # Simulated index (10 static entries)
 index = {
@@ -30,8 +35,13 @@ index = {
     10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending in breaking news"}
 }
 
-# X API crawler using full auth (mocked—replace with real creds)
+# X API crawler using full auth (mocked if tweepy missing)
 def x_crawler(api_key="dn3vr5sbsavMUYs9c6D3n712z", api_secret="AGHr2BnRDsal8Lais049XoDhiqSs3skZMs7u1FvpZHOlO46DZG", access_token="1453079771416518658-HFs0XFIwXCWcgcOwxxePnYV8TxyLka", access_token_secret="ALo0OvJj4LgFT4k4hPOhIg4v5Xv8GFLuAzI4Ke2WpIyWR", bearer_token="AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAaylsACwHhhGF%2BnW0gnSOXE%2BTdZw%3D5KnkixInU3af29mEEbzywv7SjZhtFTdCNk4GKtkRLCC4alyeFc"):
+    if tweepy is None:
+        logger.warning("tweepy not available—using mock crawler")
+        simulate_x_crawler()
+        return
+
     try:
         # Authenticate with OAuth 1.0a (full auth)
         if api_key and api_secret and access_token and access_token_secret:
