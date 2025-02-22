@@ -1,5 +1,5 @@
-# AISeek Demo - Heroku-Ready with Eccentric UI
-# Deploy: pip install flask gunicorn, create Procfile + requirements.txt, git push to Heroku
+# AISeek Demo - Render-Optimized with Eccentric UI
+# Deploy: git push to Render with requirements.txt + Procfile
 
 import re
 from collections import defaultdict
@@ -7,6 +7,11 @@ import math
 from flask import Flask, request, render_template_string
 import random
 import os
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("AISeek")
 
 # Simulated index (50 entries: 10 static, 40 X-like posts)
 index = {
@@ -22,7 +27,7 @@ index = {
     10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending now"}
 }
 
-# Simulated X crawler (replace with real X API later)
+# Simulated X crawler
 def simulate_x_crawler():
     x_base = len(index) + 1
     for i in range(40):
@@ -75,6 +80,7 @@ def score_document(query_words, doc_id):
 
 # Search function
 def aiseek_search(query):
+    logger.info(f"Searching: {query}")
     query_words = re.findall(r'\w+', query.lower())
     matching_docs = set()
     
@@ -102,7 +108,6 @@ def aiseek_search(query):
 # Flask app
 app = Flask(__name__)
 
-# Google-inspired UI with eccentric AISeek logo
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -152,11 +157,17 @@ def home():
         context["result"], context["why"], context["source"] = aiseek_search(query)
     return render_template_string(HTML_TEMPLATE, context=context, query=query)
 
+# Health check
+@app.route("/health")
+def health():
+    logger.info("Health check hit")
+    return "OK", 200
+
 # Build index
 simulate_x_crawler()
 build_index()
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    print(f"Starting AISeek demo... Access at http://localhost:{port} or your Heroku URL")
+    port = int(os.environ.get("PORT", 5000))  # Render sets PORT
+    logger.info(f"Starting AISeek on port {port}")
     app.run(debug=False, host="0.0.0.0", port=port)
