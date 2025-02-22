@@ -1,4 +1,4 @@
-# AISeek Demo - Enhanced for Render with X API Prep (tweepy Fallback)
+# AISeek Demo - Enhanced for Render with Full X API Live
 # Deploy: git push to Render with requirements.txt + Procfile
 
 import re
@@ -10,16 +10,11 @@ import os
 import logging
 import time
 from functools import lru_cache
+import tweepy
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("AISeek")
-
-try:
-    import tweepy
-except ImportError:
-    logger.warning("tweepy not found—using mock X crawler only")
-    tweepy = None
 
 # Simulated index (10 static entries)
 index = {
@@ -35,15 +30,10 @@ index = {
     10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending in breaking news"}
 }
 
-# X API crawler using full auth (mocked if tweepy missing)
-def x_crawler(api_key="dn3vr5sbsavMUYs9c6D3n712z", api_secret="AGHr2BnRDsal8Lais049XoDhiqSs3skZMs7u1FvpZHOlO46DZG", access_token="1453079771416518658-HFs0XFIwXCWcgcOwxxePnYV8TxyLka", access_token_secret="ALo0OvJj4LgFT4k4hPOhIg4v5Xv8GFLuAzI4Ke2WpIyWR", bearer_token="AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAaylsACwHhhGF%2BnW0gnSOXE%2BTdZw%3D5KnkixInU3af29mEEbzywv7SjZhtFTdCNk4GKtkRLCC4alyeFc"):
-    if tweepy is None:
-        logger.warning("tweepy not available—using mock crawler")
-        simulate_x_crawler()
-        return
-
+# X API crawler using full auth (live with your creds)
+def x_crawler(api_key="cw96LYv2eXXEcyIUnVQh9c7Q4", api_secret="2nyIcCciRy9bvMBino5118jWkLqWNqXgHRGnYJ0ex4tmy8CBd1", access_token="1453079771416518658-BCXK9kK7gLWH8a2MsWRcWF3hBf3C1z", access_token_secret="JHjmAAXHG6DptZVOeTC63dU9rmwVGMkJ0rT77EgbiMndj", bearer_token="AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAheS9U%2BWaWxOBTOSBZWJgnLM8aEc%3DXllDwASKiHCFeLrY17PTWYNAutHuI5KB1gWrSfLN7FHpJf5r7G"):
     try:
-        # Authenticate with OAuth 1.0a (full auth)
+        # Try OAuth 1.0a (full auth)
         if api_key and api_secret and access_token and access_token_secret:
             auth = tweepy.OAuthHandler(api_key, api_secret)
             auth.set_access_token(access_token, access_token_secret)
@@ -257,7 +247,7 @@ def serve_static(filename):
     return app.send_static_file(filename)
 
 # Build index
-x_crawler("", "", "1453079771416518658-HFs0XFIwXCWcgcOwxxePnYV8TxyLka", "ALo0OvJj4LgFT4k4hPOhIg4v5Xv8GFLuAzI4Ke2WpIyWR", "AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAaylsACwHhhGF%2BnW0gnSOXE%2BTdZw%3D5KnkixInU3af29mEEbzywv7SjZhtFTdCNk4GKtkRLCC4alyeFc")  # Use your full creds here
+x_crawler("cw96LYv2eXXEcyIUnVQh9c7Q4", "2nyIcCciRy9bvMBino5118jWkLqWNqXgHRGnYJ0ex4tmy8CBd1", "1453079771416518658-BCXK9kK7gLWH8a2MsWRcWF3hBf3C1z", "JHjmAAXHG6DptZVOeTC63dU9rmwVGMkJ0rT77EgbiMndj", "AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAheS9U%2BWaWxOBTOSBZWJgnLM8aEc%3DXllDwASKiHCFeLrY17PTWYNAutHuI5KB1gWrSfLN7FHpJf5r7G")  # Use your full creds here
 build_index()
 
 if __name__ == "__main__":
