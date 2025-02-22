@@ -1,4 +1,4 @@
-# AISeek Demo - Enhanced for Render with Full X API Live
+# AISeek Demo - Enhanced for Render with Fixed X API
 # Deploy: git push to Render with requirements.txt + Procfile
 
 import re
@@ -30,39 +30,34 @@ index = {
     10: {"url": "x.com/10", "content": "Latest AI breakthroughs trending in breaking news"}
 }
 
-# X API crawler using full auth (live with your creds)
+# X API crawler using full auth (live with error handling)
 def x_crawler(api_key="cw96LYv2eXXEcyIUnVQh9c7Q4", api_secret="2nyIcCciRy9bvMBino5118jWkLqWNqXgHRGnYJ0ex4tmy8CBd1", access_token="1453079771416518658-BCXK9kK7gLWH8a2MsWRcWF3hBf3C1z", access_token_secret="JHjmAAXHG6DptZVOeTC63dU9rmwVGMkJ0rT77EgbiMndj", bearer_token="AAAAAAAAAAAAAAAAAAAAJDuzQEAAAAAheS9U%2BWaWxOBTOSBZWJgnLM8aEc%3DXllDwASKiHCFeLrY17PTWYNAutHuI5KB1gWrSfLN7FHpJf5r7G"):
     try:
-        # Try OAuth 1.0a (full auth)
+        # Try OAuth 1.0a (full auth) first
         if api_key and api_secret and access_token and access_token_secret:
             auth = tweepy.OAuthHandler(api_key, api_secret)
             auth.set_access_token(access_token, access_token_secret)
             api = tweepy.API(auth, wait_on_rate_limit=True)
-        # Fallback to Bearer Token (simpler, read-only)
+            tweets = api.search_tweets(q="#AI OR #news OR #breaking OR #search -filter:retweets", count=50, lang="en", tweet_mode="extended")
+        # Fallback to Bearer Token (read-only)
         elif bearer_token:
             client = tweepy.Client(bearer_token=bearer_token)
+            tweets = client.search_recent_tweets(query="#AI OR #news OR #breaking OR #search -filter:retweets", max_results=50, tweet_fields=["created_at"])
         else:
             raise ValueError("No valid X API credentials provided")
 
-        # Pull recent tweets (e.g., #AI, #news, #breaking)
-        query = "#AI OR #news OR #breaking OR #search -filter:retweets"
-        if bearer_token:
-            tweets = client.search_recent_tweets(query=query, max_results=50, tweet_fields=["created_at"])
-        else:
-            tweets = api.search_tweets(q=query, count=50, lang="en", tweet_mode="extended")
-
         x_base = len(index) + 1
-        for i, tweet in enumerate(tweets.data if bearer_token else tweets):
+        for i, tweet in enumerate(tweets.data if 'data' in dir(tweets) else tweets):
             if tweet is not None:
                 post_id = x_base + i
-                content = tweet.text if bearer_token else (tweet.full_text if hasattr(tweet, "full_text") else tweet.text)
+                content = tweet.text if 'data' in dir(tweets) else (tweet.full_text if hasattr(tweet, "full_text") else tweet.text)
                 index[post_id] = {
                     "url": f"x.com/{tweet.id}",
                     "content": content,
-                    "timestamp": (tweet.created_at.strftime("%Y-%m-%d %H:%M:%S") if bearer_token 
+                    "timestamp": (tweet.created_at.strftime("%Y-%m-%d %H:%M:%S") if 'data' in dir(tweets) 
                                 else tweet.created_at.strftime("%Y-%m-%d %H:%M:%S"))
                 }
-        logger.info(f"Fetched {len(tweets.data if bearer_token else tweets)} tweets from X")
+        logger.info(f"Fetched {len(tweets.data if 'data' in dir(tweets) else tweets)} tweets from X")
     except Exception as e:
         logger.error(f"X API error: {e}")
         # Fallback to mock if API fails
